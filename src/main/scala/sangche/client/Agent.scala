@@ -92,6 +92,7 @@ akka {
         println(s"command ok, reply = $c")
         
       case c: CommandFail =>
+        key -= 1
         println(s"command fail, reply = $c")
 
       case x => //println(s"Agent discarding message: $x from sender $sender")
@@ -105,7 +106,7 @@ akka {
   def put(key: Any, value: Any) = ???
 
   //client 'put key val' simulation
-  system.scheduler.schedule(1000 milliseconds, 2000 milliseconds) {
+  system.scheduler.schedule(1000 milliseconds, 1000 milliseconds) {
     key += 1
     agent ! Command("key" + key, data + key)
   }

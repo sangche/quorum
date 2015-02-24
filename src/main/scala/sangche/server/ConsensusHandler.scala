@@ -1,6 +1,7 @@
 package sangche.server
 
 import akka.cluster.ClusterEvent._
+import akka.util.Timeout
 import language.postfixOps
 import akka.actor._
 
@@ -147,8 +148,25 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
       }
 
     case c@Command(_, _) =>
-      log.info(s"\n==> $self is fowarding $c to leader $leader")
-      leader foreach { l => select(l, "server") forward c}
+      leader match {
+        case None => sender ! CommandFail("Leader is None")
+        case Some(l) =>
+          import akka.pattern.{ ask, pipe }
+          import scala.concurrent.duration._
+          import scala.util.{Try, Success, Failure}
+
+          val client = sender
+          val ldr = select(l, "server")
+
+          (ldr ? PING(0))(Timeout(25 milliseconds)).mapTo[PONG] onComplete {
+            case Success(PONG(_,_)) =>
+              log.info(s"\n==> $self is fowarding $c to leader $leader, $sender")
+              ldr.tell(c, client)
+            case f =>
+              log.info(s"\n==> no PONG. leader not ready -- $f")
+              client ! CommandFail("leader not ready yet")
+          }
+      }
 
     case Prepare(n) =>
       log.info(s"\n==> n = $n, tmp = $tmp")
@@ -201,8 +219,11 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
         e.inc(value)
         if (e.isQUORUM) {
           //cancel() on cancelled return false. next PeerQueryRes can't pass if condition.
-          val from = if(s) "Leader" else "Follower"
-          e.getClient ! QueryOK(from + ": " + e.get._1)
+          val from = if(s) "From leader" else "From follower"
+          e.get._1 match {
+            case None => e.getClient ! QueryFail(from + s": no such data for $key")
+            case Some(v) => e.getClient ! QueryOK(from + ": " + v)
+          }
           qtabs(_seq) = null
         }
         else if (e.isDone) {
@@ -220,6 +241,7 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
 
     case UnreachableMember(member) =>
       log.info(s"\n==> Member unreachable: $member")
+      if (member == leader) leader = None
       members -= Option(member.address)
       if (!isMajorityUp) {
         context.become(notInService, true)
