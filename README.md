@@ -40,6 +40,8 @@ Below is the message sequence diagram between the agent and the cluster interact
 * Start seed replica on port 2553. This will create single node cluster with one replica state `NIS`.
 ![serverstart3](https://raw.githubusercontent.com/sangche/sangche.github.io/master/pics/050218/s3.PNG)
 
+* Be sure that starting sequence is StartServer3 -> StartServer2 -> StartServer1
+
 * After ServerStart3 was fully started, start second replica on port 2552. You should see replica 2553 state transition to `following`, 2552 state transition to `leading`.
 ![serverstart2](https://raw.githubusercontent.com/sangche/sangche.github.io/master/pics/050218/s2.PNG)
 ![log2](https://raw.githubusercontent.com/sangche/sangche.github.io/master/pics/050218/22.PNG)

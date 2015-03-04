@@ -28,13 +28,13 @@ case class Commit(sn: Int, msg: Command)
 
 case class CommitOK(sn: Int)
 
-case class Query(msg: Message)
+case class Query(k: Key)
 
 case class QueryOK(msg: Value)
 
 case class QueryFail(msg: Message)
 
-case class PeerQuery(s: Int, msg: Message)
+case class PeerQuery(s: Int, k: Key)
 
 case class PeerQueryRes(s: Int, k: Key, v: Value)
 

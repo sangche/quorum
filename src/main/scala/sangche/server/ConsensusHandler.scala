@@ -7,7 +7,8 @@ import akka.actor._
 
 import sangche.msgs._
 
-trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
+trait ConsensusHandler extends ActorLogging with Stash {
+  this: Server =>
 
   var seqno = 0
   // Command seq no.
@@ -76,15 +77,15 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
     case po@PrepareOK(n) if n < seqno =>
       log.info(s"\n==> $po, seqno = $seqno. Not implemented yet")
 
-    //even with timeout during waiting for CommitOK, other nodes may already commit. so read quorum might establish!
+    //even with timeout during waiting for CommitOK, followers might already commit. 
+    //so Query quorum for this Command might already be established! (ajust timeout)
     case c@CommitOK(n) if n == seqno =>
       val e = ctabs(seqno)
       //if (e != null) {  //no need worry
       e.inc2(c)
       if (e.isCommitQUORUM) {
-        //is Quorum
         db += e.c.k -> e.c.v
-        e.getClient ! CommandOK("Success")
+        e.getClient ! CommandOK(s"$n - Success")
         ctabs(seqno) = null
         //more CommitOK(n) may come, which will cause null exception?
         //-> No, it comes after state transition to leading.
@@ -151,7 +152,7 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
       leader match {
         case None => sender ! CommandFail("Leader is None")
         case Some(l) =>
-          import akka.pattern.{ ask, pipe }
+          import akka.pattern.ask
           import scala.concurrent.duration._
           import scala.util.{Try, Success, Failure}
 
@@ -159,11 +160,11 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
           val ldr = select(l, "server")
 
           (ldr ? PING(0))(Timeout(25 milliseconds)).mapTo[PONG] onComplete {
-            case Success(PONG(_,_)) =>
-              log.info(s"\n==> $self is fowarding $c to leader $leader, $sender")
+            case Success(PONG(0, _)) =>
+              log.info(s"\n==> Fowarding $c to leader $leader, $sender")
               ldr.tell(c, client)
-            case f =>
-              log.info(s"\n==> no PONG. leader not ready -- $f")
+            case fail =>
+              log.info(s"\n==> no PONG. leader not ready? -- $fail")
               client ! CommandFail("leader not ready yet")
           }
       }
@@ -186,7 +187,7 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
         db += msg.k -> msg.v
         sender ! CommitOK(n)
       } else {
-        log.info(s"\n==>seqno = $seqno, Commit($n), tmp = $tmp not implemented yet")
+        log.info(s"\n==> seqno = $seqno, Commit($n), tmp = $tmp not implemented yet")
       }
 
     case other => common(other, false)
@@ -286,7 +287,7 @@ trait ConsensusHandler extends ActorLogging with Stash { this: Server =>
 
     case Command(k, v) => sender ! CommandFail(s"$k - NIS. Try again later")
 
-    case Query(msg) => sender ! QueryFail(s"$msg - NIS. Try again later")
+    case Query(k) => sender ! QueryFail(s"$k - NIS. Try again later")
 
     case PING(n) =>
       sender ! PONG(n, members)
