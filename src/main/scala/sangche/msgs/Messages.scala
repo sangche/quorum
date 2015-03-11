@@ -4,7 +4,7 @@ import akka.actor.Address
 
 object Messages {
   type Message = String
-  type Key = Any
+  type Key = String
   type Value = Any
 }
 
@@ -18,13 +18,13 @@ case class Command(k: Key, v: Value)
 
 case class CommandOK(msg: Message)
 
-case class CommandFail(msg: Message)
+case class CommandFail(sn: Int, msg: Message)
 
-case class Prepare(sn: Int)
+case class Prepare(sn: Int, data: Command)
 
 case class PrepareOK(sn: Int)
 
-case class Commit(sn: Int, msg: Command)
+case class Commit(sn: Int)
 
 case class CommitOK(sn: Int)
 
@@ -32,7 +32,7 @@ case class Query(k: Key)
 
 case class QueryOK(msg: Value)
 
-case class QueryFail(msg: Message)
+case class QueryFail(sn: Int, msg: Message)
 
 case class PeerQuery(s: Int, k: Key)
 

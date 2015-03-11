@@ -27,10 +27,10 @@ abstract class Entry[T](s: Server, ar: ActorRef) {
 class QEntry(n: Int, s: Server, ar: ActorRef) extends Entry[Value](s, ar) {
   val timer: Cancellable = schedule.scheduleOnce(50 milliseconds, s.self, TimeOut(n, "query"))
 
-  def get = m.find(_._2 == m.values.max).get
+  def getConsensus = m.find(_._2 == m.values.max).get
 }
 
-class CEntry(n: Int, s: Server, val c: Command, ar: ActorRef) extends Entry[PrepareOK](s, ar) {
+class CEntry(n: Int, s: Server, ar: ActorRef) extends Entry[PrepareOK](s, ar) {
   val timer: Cancellable = schedule.scheduleOnce(50 milliseconds, s.self, TimeOut(n, "prepare"))
   lazy val timer2: Cancellable = schedule.scheduleOnce(50 milliseconds, s.self, TimeOut(n, "commit"))
   val m2 = collection.mutable.Map[CommitOK, Int]().withDefaultValue(0)

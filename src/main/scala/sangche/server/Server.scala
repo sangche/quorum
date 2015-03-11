@@ -5,6 +5,7 @@ import java.util
 import akka.actor._
 import akka.cluster._
 import akka.cluster.ClusterEvent.{ReachabilityEvent, MemberEvent, LeaderChanged, MemberUp}
+import sangche.msgs.Command
 import language.postfixOps
 import scala.collection.immutable.HashMap
 import scala.collection.mutable.Map
@@ -23,9 +24,8 @@ class Server(cn: Int) extends Actor with ConsensusHandler {
     cluster.subscribe(self, classOf[ReachabilityEvent])
   }
 
-  var db = HashMap.empty[Key, Value]
-  val qtabs = Map.empty[Int, QEntry]
-  val ctabs = Map.empty[Int, CEntry]
+  var db = HashMap.empty[Key, Value]      // assume persistent storage
+  var plog = HashMap.empty[Int, Command]  // assume persistent storage
  
   // cluster leader
   var leader: Option[Address] = Option(cluster.selfAddress)

@@ -59,7 +59,4 @@ Below is the message sequence diagram between the agent and the cluster interact
 
 * Change number of replicas in the cluster by changing `nodes` attribute in application.conf for your own configuration.
 
-Note: INFO messages should be DEBUG messages, but it's intentional to avoid too many
-DEBUG messages output from cluster system.
-
 Note: This is quick 'proof of idea' initial implementation and so lots of potential bugs are expected.

@@ -85,8 +85,8 @@ akka {
       case QueryOK(msg) =>
         println(s"query ok, data = $msg")
        
-      case QueryFail(msg) =>
-        println(s"query fail, reason = $msg")
+      case q: QueryFail =>
+        println(s"query fail, reason = $q")
 
       case c: CommandOK =>
         println(s"command ok, reply = $c")
